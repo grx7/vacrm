@@ -46,12 +46,19 @@ export default function VeteranDetail() {
     ]
   });
 
+  // Navigate to Add Issue page
   const handleAddIssue = () => {
     navigate(`/veteran/${veteran.id}/issue/new`);
   };
 
+  // Navigate to Issue History page
   const handleViewHistory = (issueId) => {
     navigate(`/veteran/${veteran.id}/issue/${issueId}/history`);
+  };
+
+  // Navigate to Add Timeline Entry page
+  const handleAddTimelineEntry = () => {
+    navigate(`/veteran/${veteran.id}/timeline/new`);
   };
 
   return (
@@ -61,6 +68,7 @@ export default function VeteranDetail() {
       <p><strong>DOB:</strong> {veteran.dob}</p>
       <Link to="/">Back to Dashboard</Link>
 
+      {/* Issues Section */}
       <h3 style={{ marginTop: '2rem' }}>Issues</h3>
       <button onClick={handleAddIssue}>Add New Issue</button>
       <ul>
@@ -81,10 +89,9 @@ export default function VeteranDetail() {
         })}
       </ul>
 
+      {/* Timeline Section */}
       <h3 style={{ marginTop: '2rem' }}>Procedural Timeline</h3>
-      <button onClick={() => alert('Add New Timeline Entry (mock)')}>
-        Add New Timeline Entry
-      </button>
+      <button onClick={handleAddTimelineEntry}>Add New Timeline Entry</button>
       {veteran.timeline.map((entry, idx) => (
         <div
           key={idx}
@@ -94,10 +101,14 @@ export default function VeteranDetail() {
             borderLeft: '3px solid #ccc'
           }}
         >
-          <strong>{entry.entry_date} - {entry.type}</strong>
+          <strong>
+            {entry.entry_date} - {entry.type}
+          </strong>
           <ul>
             {entry.issues.map((iss, i) => {
-              const foundIssue = veteran.issues.find((obj) => obj.id === iss.issue_id);
+              const foundIssue = veteran.issues.find(
+                (obj) => obj.id === iss.issue_id
+              );
               const name = foundIssue ? foundIssue.issue_name : 'Unknown';
               return (
                 <li key={i}>

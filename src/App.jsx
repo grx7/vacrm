@@ -6,8 +6,10 @@ import VeteranDetail from './pages/VeteranDetail';
 import AddVeteran from './pages/AddVeteran';
 import AddIssue from './pages/AddIssue';
 import IssueHistory from './pages/IssueHistory';
-// 1) Import the new component:
-import AddRatingUpdate from './pages/AddRatingUpdate';
+
+// 1) Import the new AddTimelineEntry page
+import AddTimelineEntry from './pages/AddTimelineEntry';
+import AddRatingUpdate from './pages/AddRatingUpdate'; // if you have that from earlier
 
 function App() {
   return (
@@ -29,9 +31,10 @@ function App() {
 
             <Route path="/veteran/:id/issue/new" element={<AddIssue />} />
             <Route path="/veteran/:id/issue/:issueId/history" element={<IssueHistory />} />
-
-            {/* 2) New route for "Add Rating Update" */}
             <Route path="/veteran/:id/issue/:issueId/rating/new" element={<AddRatingUpdate />} />
+
+            {/* 2) NEW: Add Timeline Entry route */}
+            <Route path="/veteran/:id/timeline/new" element={<AddTimelineEntry />} />
           </Routes>
         </div>
       </div>
