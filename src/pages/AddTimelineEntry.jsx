@@ -1,16 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-
-/**
- * NOTE: In a real app, you might fetch the veteran's issues from a global store or API
- * so the user can select which issues apply. For now, we'll just mimic a quick example.
- */
+import { DataContext } from '../DataContext';
 
 export default function AddTimelineEntry() {
   const { id } = useParams();   // Veteran's ID from URL
   const navigate = useNavigate();
 
-  // This is mock data for the dropdown of possible "types"
+  // Get data + setter from context
+  const { veterans, setVeterans } = useContext(DataContext);
+
+  // We’ll provide a fixed list of event types for the dropdown
   const eventTypes = [
     '21-526 EZ (new claim)',
     '21-526 EZ (claim for increase)',
@@ -27,66 +26,96 @@ export default function AddTimelineEntry() {
     'Other'
   ];
 
-  // Pretend these are existing issues for this veteran.
-  // In a real app, you'd fetch them or pass them from context.
-  const mockIssues = [
-    { id: 1, issue_name: 'PTSD' },
-    { id: 2, issue_name: 'Back Condition' }
-  ];
-
-  // Local form state
+  // This is the local form state for collecting the new timeline entry’s data
   const [formData, setFormData] = useState({
     entry_date: '',
-    type: '',
-    issues: [] // We'll store an array of { issue_id, what_happened }
+    type: '',      // Will be set by the dropdown
+    issues: []     // We'll store an array of { issue_id, what_happened }
   });
 
-  // Track a single "what happened" for the currently selected issue
+  // Find the correct Veteran from context
+  const currentVeteran = veterans.find(v => v.id === parseInt(id));
+  if (!currentVeteran) {
+    return (
+      <div>
+        <h2>Veteran Not Found</h2>
+        <button onClick={() => navigate('/')}>Go Home</button>
+      </div>
+    );
+  }
+
+  // Show the user a dropdown of the veteran's existing issues
+  const availableIssues = currentVeteran.issues;
+
+  // For adding issues to the timeline, we track them in these local states
   const [currentIssueId, setCurrentIssueId] = useState('');
   const [currentWhatHappened, setCurrentWhatHappened] = useState('');
 
-  // Handle adding an issue entry to the issues array
-  const handleAddIssueEntry = () => {
+  // Add the chosen issue + "what happened" to formData.issues
+  const handleAddIssue = () => {
     if (!currentIssueId || !currentWhatHappened) {
       alert('Please select an issue and describe what happened.');
       return;
     }
 
-    // Check if this issue is already added
-    const alreadyExists = formData.issues.find(i => i.issue_id === parseInt(currentIssueId));
-    if (alreadyExists) {
-      alert('That issue is already added. Remove it first or choose another issue.');
+    const alreadyAdded = formData.issues.find(i => i.issue_id === parseInt(currentIssueId));
+    if (alreadyAdded) {
+      alert('That issue is already in the list. Remove it first or choose a different one.');
       return;
     }
 
-    const newIssue = {
+    const newIssueLine = {
       issue_id: parseInt(currentIssueId),
       what_happened: currentWhatHappened
     };
+
     setFormData({
       ...formData,
-      issues: [...formData.issues, newIssue]
+      issues: [...formData.issues, newIssueLine]
     });
-    // Reset the local fields
+
+    // Reset local fields
     setCurrentIssueId('');
     setCurrentWhatHappened('');
   };
 
-  // Handle removing an issue from the "issues" array
-  const handleRemoveIssue = (issue_id) => {
+  // Remove an issue from formData.issues
+  const handleRemoveIssue = (issueId) => {
     setFormData({
       ...formData,
-      issues: formData.issues.filter(i => i.issue_id !== issue_id)
+      issues: formData.issues.filter(i => i.issue_id !== issueId)
     });
   };
 
-  // Handle the final form submission
+  // Final form submission
   const handleSubmit = (e) => {
     e.preventDefault();
-    // In a real app, you'd POST this data to your backend or update global state
-    console.log('New timeline entry for Veteran', id, formData);
-    alert('New Timeline Entry added (mock). Check console for data.');
-    // Navigate back to the Veteran Detail page
+
+    // 1) Make a copy of the veterans array
+    const updatedVeterans = [...veterans];
+    // 2) Find the correct veteran
+    const idx = updatedVeterans.findIndex(v => v.id === parseInt(id));
+    if (idx < 0) {
+      alert('Veteran not found');
+      navigate('/');
+      return;
+    }
+
+    // 3) Build a new timeline entry object
+    const newEntry = {
+      entry_date: formData.entry_date,
+      type: formData.type,
+      issues: formData.issues
+    };
+
+    // 4) Push it onto the veteran’s timeline array
+    updatedVeterans[idx].timeline.push(newEntry);
+
+    // 5) Save the updated array to context -> localStorage
+    setVeterans(updatedVeterans);
+
+    // 6) Navigate back
+    alert('New Timeline Entry added!');
     navigate(`/veteran/${id}`);
   };
 
@@ -96,18 +125,16 @@ export default function AddTimelineEntry() {
       <p><strong>Veteran ID:</strong> {id}</p>
 
       <form onSubmit={handleSubmit} style={{ marginTop: '1rem' }}>
-        {/* DATE OF EVENT */}
         <div>
           <label>Date of Event:</label><br />
           <input
             type="date"
             value={formData.entry_date}
-            onChange={(e) => setFormData({ ...formData, entry_date: e.target.value })}
+            onChange={e => setFormData({ ...formData, entry_date: e.target.value })}
             required
           />
         </div>
 
-        {/* TYPE OF EVENT */}
         <div style={{ marginTop: '1rem' }}>
           <label>Type:</label><br />
           <select
@@ -117,14 +144,16 @@ export default function AddTimelineEntry() {
           >
             <option value="">-- Select an Event Type --</option>
             {eventTypes.map((et, index) => (
-              <option key={index} value={et}>{et}</option>
+              <option key={index} value={et}>
+                {et}
+              </option>
             ))}
           </select>
         </div>
 
         <hr style={{ margin: '1rem 0' }} />
 
-        {/* ISSUES AFFECTED */}
+        {/* ADD ISSUES AFFECTED */}
         <h4>Issues Involved</h4>
         <div>
           <label>Select Issue:</label><br />
@@ -132,41 +161,47 @@ export default function AddTimelineEntry() {
             value={currentIssueId}
             onChange={(e) => setCurrentIssueId(e.target.value)}
           >
-            <option value="">-- Select an Issue --</option>
-            {mockIssues.map(issue => (
+            <option value="">-- Choose an Issue --</option>
+            {availableIssues.map(issue => (
               <option key={issue.id} value={issue.id}>
                 {issue.issue_name}
               </option>
             ))}
           </select>
         </div>
+
         <div style={{ marginTop: '0.5rem' }}>
           <label>What Happened?</label><br />
           <textarea
             rows="2"
             cols="40"
+            placeholder="Describe the decision or event for this issue..."
             value={currentWhatHappened}
             onChange={(e) => setCurrentWhatHappened(e.target.value)}
           />
         </div>
-        <button type="button" style={{ marginTop: '0.5rem' }} onClick={handleAddIssueEntry}>
+        <button
+          type="button"
+          style={{ marginTop: '0.5rem' }}
+          onClick={handleAddIssue}
+        >
           Add Issue to List
         </button>
 
-        {/* DISPLAY THE LIST OF ISSUES ADDED */}
+        {/* SHOW THE LIST OF ISSUES ADDED */}
         <div style={{ marginTop: '1rem' }}>
           <ul>
-            {formData.issues.map((issueEntry) => {
-              // Find the name in mockIssues
-              const found = mockIssues.find(i => i.id === issueEntry.issue_id);
-              const name = found ? found.issue_name : `Issue #${issueEntry.issue_id}`;
+            {formData.issues.map(i => {
+              // Find the name from the available issues
+              const found = availableIssues.find(ai => ai.id === i.issue_id);
+              const name = found ? found.issue_name : `Issue #${i.issue_id}`;
               return (
-                <li key={issueEntry.issue_id} style={{ marginBottom: '0.5rem' }}>
-                  <strong>{name}</strong> - {issueEntry.what_happened}
+                <li key={i.issue_id} style={{ marginBottom: '0.5rem' }}>
+                  <strong>{name}</strong> - {i.what_happened}
                   <button
                     type="button"
                     style={{ marginLeft: '1rem' }}
-                    onClick={() => handleRemoveIssue(issueEntry.issue_id)}
+                    onClick={() => handleRemoveIssue(i.issue_id)}
                   >
                     Remove
                   </button>

@@ -1,17 +1,15 @@
-import React, { useState } from 'react';
+import React, { useContext } from 'react';
 import { Link } from 'react-router-dom';
+import { DataContext } from '../DataContext';
 
 export default function Dashboard() {
-  // Mock data: list of veterans
-  const [veterans] = useState([
-    { id: 1, full_name: 'John Smith', dob: '1980-01-01', issues: 2, lastUpdate: '2023-03-24' },
-    { id: 2, full_name: 'Alice Johnson', dob: '1975-05-10', issues: 3, lastUpdate: '2023-04-15' },
-  ]);
+  // Read the array of veterans from context
+  const { veterans } = useContext(DataContext);
 
   return (
     <div>
       <h2>Dashboard: Veteran Cases</h2>
-      <table style={{ borderCollapse: 'collapse', width: '100%' }} border="1" cellPadding="8">
+      <table border="1" cellPadding="8" style={{ borderCollapse: 'collapse', width: '100%' }}>
         <thead>
           <tr>
             <th>#</th>
@@ -23,21 +21,27 @@ export default function Dashboard() {
           </tr>
         </thead>
         <tbody>
-          {veterans.map((v, idx) => (
-            <tr key={v.id}>
-              <td>{idx + 1}</td>
-              <td>{v.full_name}</td>
-              <td>{v.dob}</td>
-              <td>{v.issues}</td>
-              <td>{v.lastUpdate}</td>
-              <td>
-                <Link to={`/veteran/${v.id}`}>View</Link>
-              </td>
-            </tr>
-          ))}
+          {veterans.map((v, idx) => {
+            // e.g., get last timeline entry's date
+            const lastEntry = v.timeline[v.timeline.length - 1];
+            const lastUpdate = lastEntry ? lastEntry.entry_date : 'N/A';
+
+            return (
+              <tr key={v.id}>
+                <td>{idx + 1}</td>
+                <td>{v.full_name}</td>
+                <td>{v.dob}</td>
+                <td>{v.issues.length}</td>
+                <td>{lastUpdate}</td>
+                <td>
+                  <Link to={`/veteran/${v.id}`}>View</Link>
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
-      <Link to="/veteran/new" style={{ display: 'inline-block', marginTop: '1rem' }}>
+      <Link to="/veteran/new" style={{ marginTop: '1rem', display: 'inline-block' }}>
         Add New Veteran
       </Link>
     </div>
