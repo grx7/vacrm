@@ -5,12 +5,10 @@ import { DataContext } from '../DataContext';
 export default function VeteranDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  // Get the array of veterans from context
   const { veterans } = useContext(DataContext);
 
   // Find the matching veteran
-  const veteran = veterans.find(v => v.id === parseInt(id));
-
+  const veteran = veterans.find((v) => v.id === parseInt(id));
   if (!veteran) {
     return (
       <div>
@@ -20,17 +18,16 @@ export default function VeteranDetail() {
     );
   }
 
-  // The rest remains mostly the same: handleAddIssue, handleViewHistory, etc.
   const handleAddIssue = () => {
     navigate(`/veteran/${veteran.id}/issue/new`);
   };
 
-  const handleAddTimelineEntry = () => {
-    navigate(`/veteran/${veteran.id}/timeline/new`);
-  };
-
   const handleViewHistory = (issueId) => {
     navigate(`/veteran/${veteran.id}/issue/${issueId}/history`);
+  };
+
+  const handleAddTimelineEntry = () => {
+    navigate(`/veteran/${veteran.id}/timeline/new`);
   };
 
   return (
@@ -43,13 +40,30 @@ export default function VeteranDetail() {
       <h3 style={{ marginTop: '2rem' }}>Issues</h3>
       <button onClick={handleAddIssue}>Add New Issue</button>
       <ul>
-        {veteran.issues.map(issue => {
-          const latest = issue.rating_history[issue.rating_history.length - 1];
+        {veteran.issues.map((issue) => {
+          // -- CHANGE #1: Safely get the "latest" rating if any exist --
+          const hasRatings = issue.rating_history && issue.rating_history.length > 0;
+          const latest = hasRatings
+            ? issue.rating_history[issue.rating_history.length - 1]
+            : null;
+
+          // -- Render the issue --
           return (
             <li key={issue.id} style={{ marginTop: '1rem' }}>
-              <strong>{issue.issue_name}</strong> - {latest.percent}%
-              {` (DC ${latest.diagnostic_code}, eff. ${latest.effective_date})`}
-              <button style={{ marginLeft: '1rem' }} onClick={() => handleViewHistory(issue.id)}>
+              <strong>{issue.issue_name}</strong>
+              {latest ? (
+                <>
+                  {' - '}
+                  {latest.percent}% (DC {latest.diagnostic_code}, eff. {latest.effective_date})
+                </>
+              ) : (
+                // Fallback if no rating
+                <> - No rating assigned</>
+              )}
+              <button
+                style={{ marginLeft: '1rem' }}
+                onClick={() => handleViewHistory(issue.id)}
+              >
                 View History
               </button>
             </li>
@@ -62,12 +76,18 @@ export default function VeteranDetail() {
       {veteran.timeline.map((entry, idx) => (
         <div
           key={idx}
-          style={{ marginTop: '1rem', paddingLeft: '1rem', borderLeft: '3px solid #ccc' }}
+          style={{
+            marginTop: '1rem',
+            paddingLeft: '1rem',
+            borderLeft: '3px solid #ccc',
+          }}
         >
-          <strong>{entry.entry_date} - {entry.type}</strong>
+          <strong>
+            {entry.entry_date} - {entry.type}
+          </strong>
           <ul>
             {entry.issues.map((iss, i) => {
-              const foundIssue = veteran.issues.find(obj => obj.id === iss.issue_id);
+              const foundIssue = veteran.issues.find((obj) => obj.id === iss.issue_id);
               const name = foundIssue ? foundIssue.issue_name : 'Unknown';
               return <li key={i}>{name} ({iss.what_happened})</li>;
             })}
