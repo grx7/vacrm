@@ -29,12 +29,12 @@ export default function AddTimelineEntry() {
   // This is the local form state for collecting the new timeline entry’s data
   const [formData, setFormData] = useState({
     entry_date: '',
-    type: '',      // Will be set by the dropdown
-    issues: []     // We'll store an array of { issue_id, what_happened }
+    type: '',
+    issues: []  // We'll store an array of { issue_id, what_happened, date_of_event, percent_change }
   });
 
   // Find the correct Veteran from context
-  const currentVeteran = veterans.find(v => v.id === parseInt(id));
+  const currentVeteran = veterans.find((v) => v.id === parseInt(id));
   if (!currentVeteran) {
     return (
       <div>
@@ -44,29 +44,37 @@ export default function AddTimelineEntry() {
     );
   }
 
-  // Show the user a dropdown of the veteran's existing issues
+  // We'll show the user a dropdown of the veteran's existing issues
   const availableIssues = currentVeteran.issues;
 
   // For adding issues to the timeline, we track them in these local states
   const [currentIssueId, setCurrentIssueId] = useState('');
   const [currentWhatHappened, setCurrentWhatHappened] = useState('');
 
-  // Add the chosen issue + "what happened" to formData.issues
+  // NEW FIELDS: date picker + percent inc/dec
+  const [currentIssueDate, setCurrentIssueDate] = useState('');
+  const [currentPercentChange, setCurrentPercentChange] = useState('');
+
+  // Add the chosen issue + details to formData.issues
   const handleAddIssue = () => {
     if (!currentIssueId || !currentWhatHappened) {
       alert('Please select an issue and describe what happened.');
       return;
     }
 
-    const alreadyAdded = formData.issues.find(i => i.issue_id === parseInt(currentIssueId));
+    // Prevent adding the same issue multiple times
+    const alreadyAdded = formData.issues.find((i) => i.issue_id === parseInt(currentIssueId));
     if (alreadyAdded) {
       alert('That issue is already in the list. Remove it first or choose a different one.');
       return;
     }
 
+    // Build an object that includes the two new fields
     const newIssueLine = {
       issue_id: parseInt(currentIssueId),
-      what_happened: currentWhatHappened
+      what_happened: currentWhatHappened,
+      date_of_event: currentIssueDate,    // optional
+      percent_change: currentPercentChange // optional
     };
 
     setFormData({
@@ -77,13 +85,15 @@ export default function AddTimelineEntry() {
     // Reset local fields
     setCurrentIssueId('');
     setCurrentWhatHappened('');
+    setCurrentIssueDate('');
+    setCurrentPercentChange('');
   };
 
   // Remove an issue from formData.issues
   const handleRemoveIssue = (issueId) => {
     setFormData({
       ...formData,
-      issues: formData.issues.filter(i => i.issue_id !== issueId)
+      issues: formData.issues.filter((i) => i.issue_id !== issueId)
     });
   };
 
@@ -94,7 +104,7 @@ export default function AddTimelineEntry() {
     // 1) Make a copy of the veterans array
     const updatedVeterans = [...veterans];
     // 2) Find the correct veteran
-    const idx = updatedVeterans.findIndex(v => v.id === parseInt(id));
+    const idx = updatedVeterans.findIndex((v) => v.id === parseInt(id));
     if (idx < 0) {
       alert('Veteran not found');
       navigate('/');
@@ -125,12 +135,13 @@ export default function AddTimelineEntry() {
       <p><strong>Veteran ID:</strong> {id}</p>
 
       <form onSubmit={handleSubmit} style={{ marginTop: '1rem' }}>
+        {/* MAIN TIMELINE FIELDS */}
         <div>
           <label>Date of Event:</label><br />
           <input
             type="date"
             value={formData.entry_date}
-            onChange={e => setFormData({ ...formData, entry_date: e.target.value })}
+            onChange={(e) => setFormData({ ...formData, entry_date: e.target.value })}
             required
           />
         </div>
@@ -153,7 +164,7 @@ export default function AddTimelineEntry() {
 
         <hr style={{ margin: '1rem 0' }} />
 
-        {/* ADD ISSUES AFFECTED */}
+        {/* ISSUES AFFECTED */}
         <h4>Issues Involved</h4>
         <div>
           <label>Select Issue:</label><br />
@@ -162,7 +173,7 @@ export default function AddTimelineEntry() {
             onChange={(e) => setCurrentIssueId(e.target.value)}
           >
             <option value="">-- Choose an Issue --</option>
-            {availableIssues.map(issue => (
+            {availableIssues.map((issue) => (
               <option key={issue.id} value={issue.id}>
                 {issue.issue_name}
               </option>
@@ -180,6 +191,27 @@ export default function AddTimelineEntry() {
             onChange={(e) => setCurrentWhatHappened(e.target.value)}
           />
         </div>
+
+        {/* NEW FIELDS: Date + Percentage Increase/Decrease */}
+        <div style={{ marginTop: '0.5rem' }}>
+          <label>Date of Issue Event (Optional):</label><br />
+          <input
+            type="date"
+            value={currentIssueDate}
+            onChange={(e) => setCurrentIssueDate(e.target.value)}
+          />
+        </div>
+
+        <div style={{ marginTop: '0.5rem' }}>
+          <label>Percentage Increase/Decrease (Optional):</label><br />
+          <input
+            type="number"
+            placeholder="e.g. +10 or -10"
+            value={currentPercentChange}
+            onChange={(e) => setCurrentPercentChange(e.target.value)}
+          />
+        </div>
+
         <button
           type="button"
           style={{ marginTop: '0.5rem' }}
@@ -191,13 +223,20 @@ export default function AddTimelineEntry() {
         {/* SHOW THE LIST OF ISSUES ADDED */}
         <div style={{ marginTop: '1rem' }}>
           <ul>
-            {formData.issues.map(i => {
+            {formData.issues.map((i) => {
               // Find the name from the available issues
-              const found = availableIssues.find(ai => ai.id === i.issue_id);
+              const found = availableIssues.find((ai) => ai.id === i.issue_id);
               const name = found ? found.issue_name : `Issue #${i.issue_id}`;
+
               return (
                 <li key={i.issue_id} style={{ marginBottom: '0.5rem' }}>
-                  <strong>{name}</strong> - {i.what_happened}
+                  <strong>{name}</strong> – {i.what_happened}
+                  {i.date_of_event && (
+                    <div>Date: {i.date_of_event}</div>
+                  )}
+                  {i.percent_change && (
+                    <div>Percent change: {i.percent_change}</div>
+                  )}
                   <button
                     type="button"
                     style={{ marginLeft: '1rem' }}
