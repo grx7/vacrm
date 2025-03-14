@@ -8,7 +8,7 @@ export default function VeteranDetail() {
   const { veterans } = useContext(DataContext);
 
   // Find the matching veteran
-  const veteran = veterans.find(v => v.id === parseInt(id));
+  const veteran = veterans.find((v) => v.id === parseInt(id));
   if (!veteran) {
     return (
       <div>
@@ -18,101 +18,81 @@ export default function VeteranDetail() {
     );
   }
 
-  // Navigation helpers
+  // Go to Add Issue
   const handleAddIssue = () => {
     navigate(`/veteran/${veteran.id}/issue/new`);
   };
-  const handleAddTimelineEntry = () => {
-    navigate(`/veteran/${veteran.id}/timeline/new`);
-  };
+
+  // Go to Issue History
   const handleViewHistory = (issueId) => {
     navigate(`/veteran/${veteran.id}/issue/${issueId}/history`);
   };
 
-  /**
-   * Scans the timeline to find the newest percent_change for a given issueId
-   */
-  function getLatestPercentChange(issueId) {
-    let latest = null;
+  // Go to Add Timeline Entry
+  const handleAddTimelineEntry = () => {
+    navigate(`/veteran/${veteran.id}/timeline/new`);
+  };
 
-    for (const entry of veteran.timeline) {
-      for (const iss of entry.issues) {
-        // Must have percent_change AND match this issueId
-        if (iss.issue_id === issueId && iss.percent_change) {
-          const found = {
-            entry_date: entry.entry_date,
-            percent_change: iss.percent_change
-          };
-          if (!latest) {
-            latest = found;
-          } else {
-            // Compare by date, keep the newest
-            if (new Date(found.entry_date) > new Date(latest.entry_date)) {
-              latest = found;
-            }
-          }
-        }
-      }
-    }
-
-    return latest ? latest.percent_change : null;
+  // NEW: Edit a specific issue in the timeline
+  function handleEditTimelineIssue(entryIndex, issueIndex) {
+    navigate(`/veteran/${veteran.id}/timeline/${entryIndex}/issue/${issueIndex}/edit`);
   }
 
   return (
-    <div style={{ padding: '1rem' }}>
+    <div>
       <h2>Veteran Detail</h2>
       <p><strong>Name:</strong> {veteran.full_name}</p>
       <p><strong>DOB:</strong> {veteran.dob}</p>
       <Link to="/">Back to Dashboard</Link>
 
-      {/* Issues Section */}
+      {/* Example: Issues list (if you have rating_history or timeline logic) */}
       <h3 style={{ marginTop: '2rem' }}>Issues</h3>
       <button onClick={handleAddIssue}>Add New Issue</button>
       <ul>
-        {veteran.issues.map(issue => {
-          // Grab the newest percent_change from timeline
-          const rating = getLatestPercentChange(issue.id);
-
+        {veteran.issues.map((issue) => {
+          // If you have code for rating_history or timeline scanning, place it here
           return (
             <li key={issue.id} style={{ marginTop: '1rem' }}>
               <strong>{issue.issue_name}</strong>
-              {rating
-                ? ` - Current Rating: ${rating}%`
-                : ' - No rating assigned'}
-              <button
-                style={{ marginLeft: '1rem' }}
-                onClick={() => handleViewHistory(issue.id)}
-              >
-                View History
-              </button>
+              {/* e.g., " - No rating assigned" or show the newest rating */}
             </li>
           );
         })}
       </ul>
 
-      {/* Timeline Section */}
+      {/* Procedural Timeline */}
       <h3 style={{ marginTop: '2rem' }}>Procedural Timeline</h3>
       <button onClick={handleAddTimelineEntry}>Add New Timeline Entry</button>
-      {veteran.timeline.map((entry, idx) => (
+      {veteran.timeline.map((entry, entryIndex) => (
         <div
-          key={idx}
-          style={{ marginTop: '1rem', paddingLeft: '1rem', borderLeft: '3px solid #ccc' }}
+          key={entryIndex}
+          style={{
+            marginTop: '1rem',
+            paddingLeft: '1rem',
+            borderLeft: '3px solid #ccc'
+          }}
         >
-          <strong>{entry.entry_date} - {entry.type}</strong>
+          <strong>
+            {entry.entry_date} - {entry.type}
+          </strong>
           <ul>
-            {entry.issues.map((iss, i) => {
-              const foundIssue = veteran.issues.find(obj => obj.id === iss.issue_id);
+            {entry.issues.map((iss, issueIndex) => {
+              const foundIssue = veteran.issues.find((obj) => obj.id === iss.issue_id);
               const name = foundIssue ? foundIssue.issue_name : 'Unknown';
 
               return (
-                <li key={i} style={{ marginBottom: '0.5rem' }}>
+                <li key={issueIndex} style={{ marginBottom: '0.5rem' }}>
                   <strong>{name}</strong> ({iss.what_happened})
-                  {iss.date_of_event && (
-                    <div>Effective date: {iss.date_of_event}</div>
-                  )}
-                  {iss.percent_change && (
-                    <div>Rating: {iss.percent_change}%</div>
-                  )}
+                  {iss.date_of_event && <div>Effective date: {iss.date_of_event}</div>}
+                  {iss.percent_change && <div>Rating: {iss.percent_change}%</div>}
+
+                  {/* EDIT BUTTON */}
+                  <button
+                    style={{ marginLeft: '1rem' }}
+                    onClick={() => handleEditTimelineIssue(entryIndex, issueIndex)}
+                  >
+                    Edit
+                  </button>
                 </li>
               );
             })}
