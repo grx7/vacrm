@@ -194,7 +194,7 @@ export default function AddTimelineEntry() {
 
         {/* NEW FIELDS: Date + Percentage Increase/Decrease */}
         <div style={{ marginTop: '0.5rem' }}>
-          <label>Date of Issue Event (Optional):</label><br />
+          <label>Effective Date:</label><br />
           <input
             type="date"
             value={currentIssueDate}
@@ -203,7 +203,7 @@ export default function AddTimelineEntry() {
         </div>
 
         <div style={{ marginTop: '0.5rem' }}>
-          <label>Percentage Increase/Decrease (Optional):</label><br />
+          <label>Rating Increase/Decrease (Optional):</label><br />
           <input
             type="number"
             placeholder="e.g. +10 or -10"
