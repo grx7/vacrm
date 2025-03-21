@@ -5,6 +5,9 @@ import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import Dashboard from './pages/Dashboard';
 import VeteranDetail from './pages/VeteranDetail';
 import EditTimelineIssue from './pages/EditTimelineIssue';
+// Add the following imports:
+import AddIssue from './pages/AddIssue';
+import AddTimelineEntry from './pages/AddTimelineEntry';
 
 function App() {
   return (
@@ -19,10 +22,15 @@ function App() {
         </nav>
         <div style={{ padding: '1rem' }}>
           <Routes>
+            {/* Existing routes */}
             <Route path="/" element={<Dashboard />} />
             <Route path="/veteran/:id" element={<VeteranDetail />} />
 
-            {/* Edit timeline issue route */}
+            {/* NEW: AddIssue and AddTimelineEntry routes */}
+            <Route path="/veteran/:id/issue/new" element={<AddIssue />} />
+            <Route path="/veteran/:id/timeline/new" element={<AddTimelineEntry />} />
+
+            {/* Existing Edit route */}
             <Route
               path="/veteran/:id/timeline/:entryIndex/issue/:issueIndex/edit"
               element={<EditTimelineIssue />}
